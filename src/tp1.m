@@ -9,8 +9,12 @@ encomendas2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.
 function val = p(i,j,C,pedidos,encomendas)
   val = 0;
   
-  for k = max(0,i-j):i
-    val += pedidos(k + 1) * encomendas(k - i + j + 1);
+  for ex = max(0,j-i):(j-1)
+    val += pedidos(ex + (i - j) + 1) * encomendas(ex + 1);
+  endfor
+  
+  for p = i:C
+    val += pedidos(p + 1)*encomendas(j + 1);
   endfor
 endfunction
 
