@@ -69,6 +69,33 @@ def buildMatrixes(C, requests, deliveries):
 	
 	return (X,Y)
 
+"""
+Binds separate transition and contributions matrixes,
+of both matrixes together, aggregating them together.
+Returns (X,Y). Where X is the binding of the transitions
+and Y is the binding of the contributions.
+"""
+def bindMatrixes(C, (a1,b1), (a2,b2)):
+	k = C + 1
+	N = k * k
+	X = np.zeros( (N, N) )
+	Y = np.zeros( (N, N) )
+
+	for i in range(0, N):
+		
+		i0 = i // k
+		i1 = i % k
+
+		for j in range(0, N):
+			
+			f0 = j // k
+			f1 = j % k
+
+			X[i,j] = a1[i0,f0] * a2[i1,f1]
+			Y[i,j] = b1[i0,f0] + b2[i1,f1]
+
+	return (X,Y)
+
 # Estimates, for each decision, the expected contribution.
 def estContributions(k, tMat, cMat):
 	return [np.array(np.sum(np.multiply(tMat[i],cMat[i]), axis=1)).reshape((k,1)) for i in range(k)]
@@ -136,5 +163,8 @@ deliveries1 = [0.0448,0.1632,0.2220,0.2092,0.1620,0.1056,0.0556,0.0236,0.0100,0.
 requests2  = [0.0612,0.1204,0.1476,0.1228,0.1080,0.1100,0.0788,0.0776,0.0576,0.0516,0.0328,0.0236,0.0080]
 deliveries2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.0100,0.0040,0.0024,0.0008]
 
-(a,b) = buildMatrixes(12,requests1,deliveries1)
-print(np.sum(b,axis=1))
+F1 = buildMatrixes(12,requests1,deliveries1)
+F2 = buildMatrixes(12,requests2,deliveries2)
+(a,b) = bindMatrixes(12, F1, F2)
+
+print(np.sum(a,axis=1))
