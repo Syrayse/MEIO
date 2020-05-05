@@ -134,22 +134,27 @@ def bindMatrixes(C, (a1,b1), (a2,b2)):
 def entryProblem(requests, deliveries):
 	tMats = []
 	cMats = []
+	dict = {}
+	k = 1
 
 	F1 = buildMatrixes(12,0,requests[0],deliveries[0])
 	F2 = buildMatrixes(12,0,requests[1],deliveries[1])
 	(a,b) = bindMatrixes(12, F1, F2)
 	tMats.append(a)
 	cMats.append(b)
+	dict[0] = '(0,0)'
 
 	for i in range(-3, 4):
 		if i != 0:
 			F1 = buildMatrixes(12,i,requests[0],deliveries[0])
-			F2 = buildMatrixes(12,-i,requests[1],deliveries[1])
+			F2 = (a1,b1) = buildMatrixes(12,-i,requests[1],deliveries[1])
 			(a,b) = bindMatrixes(12, F1, F2)
 			tMats.append(a)
 			cMats.append(b)
+			dict[k] = '(' + str(i) + "," + str(-i) + ')'
+			k = k + 1
 
-	return (tMats, cMats)
+	return (tMats, cMats, dict)
 
 # Estimates, for each decision, the expected contribution.
 def estContributions(k, w, tMat, cMat):
@@ -220,6 +225,13 @@ deliveries2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.
 
 
 
-(tMat,cMat) = entryProblem([requests1,requests2],[deliveries1,deliveries2])
+(tMat,cMat,dict) = entryProblem([requests1,requests2],[deliveries1,deliveries2])
 
-print( valueIteration(7, 169, tMat, cMat) )
+k = 169
+
+calls = valueIteration(7, 169, tMat, cMat)
+
+for i in range(0, k):
+	print('For (' + str(i // 13) + ',' + str(i%13) + ') take ' + dict.get(calls[i]))
+
+
