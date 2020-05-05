@@ -49,35 +49,6 @@ branch. If nTrans > 0, then the branch is the reciever of
 vehicles. If nTrans = 0, the branch does not provide nor
 recieve any vehicles. If nTrans < 0, then the branch is
 the sender of the vehicles.
-
-When the branch is a reciever, a natural shift-right occurs,
-that being justified by the fact that it is recieving an arbitrary
-number of units, which means it will necessarly have atleast those units
-So, if that same branch where to have 2 units at the next day and
-recieved 1, then natural that same branch will be at 3 units. Thus ocurrs
-the so called shift-right. This necessarly also applies to the
-contribution matrix, except for the cost paid for the parking spot, which
-is fixed. When a shift-right occurs, then naturally the position at
-(i,j) is supposed to mention the position at (i,j-nTrans), that being,
-the position such that j > C - nTrans, will necessarly have to be acummulated
-at the position j = C. So, to j = C we must add the phi component, representative of the overflow and sum the probabilities from j = c- nTrans + 1
-up until j = C.
-So we get the equation
-	Para nTrans <= j <= C
-		P(i,j) = p(i, j - nTrans)
-		If j == C:
-			P(i,j) += sum(j = C-nTrans+1 ... C)
-			P(i,j) += phi(i, ...)
-
-
-When the specified branch is the sender, then a natural shift-left occurs. This occurs basically because of the limitation imposed that all the vehicles that overflow are routed to outer branches of the network. This implies that we cannot transfer overflown vehicles. So, if we were supposed to be at j = 12 the next, then necessarly, if we transfer N = 2 vehicles, then the position j = 10 will end up with the probabilities of j = 12. and all j > 10 will be at 0, atleast in the transition matrix. So, in the corresponding matrix, the house at position (i,j) will contain the value of (i,j+nTrans). Nonetheless, this implies a shift-left. However, if we are shifting left we also need to comepsate the probabilities on the left hand side of the matrixes. if we have a position at j < nTrans, then, the transaction is naturally impossible to satisfy. That being, at the specified location is also added the corresponding probability p(i,j), as if no transfers had happend.
-So we get the equation
-	Para 0 <= j <= C - nTrans
-		P(i,j) = p(i, j + nTrans) 
-		If j == C - Trans:
-			P(i,j) += phi(i, ...)
-		If j < nTrans:
-			P(i,j) += p(i,j)
 """
 def buildMatrixes(C, nTrans, requests, deliveries):
 	X = np.zeros((C+1,C+1))
@@ -156,9 +127,30 @@ def bindMatrixes(C, (a1,b1), (a2,b2)):
 
 	return (X,Y)
 
+# Generates all possibilites
+def entryProblem(requests, deliveries):
+	tMats = []
+	cMats = []
+
+	F1 = buildMatrixes(12,0,requests[0],deliveries[0])
+	F2 = buildMatrixes(12,0,requests[1],deliveries[1])
+	(a,b) = bindMatrixes(12, F1, F2)
+	tMats.append(a)
+	cMats.append(b)
+
+	for i in range(-3, 4):
+		if i != 0:
+			F1 = buildMatrixes(12,i,requests[0],deliveries[0])
+			F2 = buildMatrixes(12,-i,requests[1],deliveries[1])
+			(a,b) = bindMatrixes(12, F1, F2)
+			tMats.append(a)
+			cMats.append(b)
+
+	return (tMats, cMats)
+
 # Estimates, for each decision, the expected contribution.
-def estContributions(k, tMat, cMat):
-	return [np.array(np.sum(np.multiply(tMat[i],cMat[i]), axis=1)).reshape((k,1)) for i in range(k)]
+def estContributions(k, w, tMat, cMat):
+	return [np.array(np.sum(np.multiply(tMat[i],cMat[i]), axis=1)).reshape((w,1)) for i in range(k)]
 
 # Estimates, for each decisions, the total expected contribution.
 def estTotalContribs(k, cts, tMat, optPolicy):
@@ -177,7 +169,7 @@ def valueIteration(nDecisions, nStates, transMat, contribMat, iterMax = 20):
 	calls = np.zeros(nStates)
 
 	# Establish expected contribution for each decision.
-	contribs = estContributions(nDecisions, transMat, contribMat)
+	contribs = estContributions(nDecisions, nStates, transMat, contribMat)
 
 	while n < iterMax:
 
@@ -223,10 +215,8 @@ deliveries1 = [0.0448,0.1632,0.2220,0.2092,0.1620,0.1056,0.0556,0.0236,0.0100,0.
 requests2  = [0.0612,0.1204,0.1476,0.1228,0.1080,0.1100,0.0788,0.0776,0.0576,0.0516,0.0328,0.0236,0.0080]
 deliveries2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.0100,0.0040,0.0024,0.0008]
 
-F1 = (a0,b0) = buildMatrixes(12,-3,requests1,deliveries1)
-F2 = (a1,b1) = buildMatrixes(12,3,requests2,deliveries2)
-(a,b) = bindMatrixes(12, F1, F2)
 
-print(b1)
-print(np.sum(a1, axis=1))
-#print(np.sum(a,axis=1))
+
+(tMat,cMat) = entryProblem([requests1,requests2],[deliveries1,deliveries2])
+
+print( valueIteration(7, 169, tMat, cMat) )
