@@ -80,7 +80,6 @@ def buildMatrixes(C, nTrans, requests, deliveries):
 				X[i,j] += a
 				Y[i,j] += b
 
-	
 	for i in range(0, C + 1):
 		for j in range(0, C + 1):
 			if X[i,j] == 0:
@@ -88,8 +87,7 @@ def buildMatrixes(C, nTrans, requests, deliveries):
 			else:
 				Y[i,j] = Y[i,j] / X[i,j]
 	
-	# Include the cost for extra space if j > 8
-	
+	# Include the cost for extra space if j > 8	
 	extra = np.zeros( (C+1, C+1) )
 
 	for i in range(0, C + 1):
@@ -97,6 +95,11 @@ def buildMatrixes(C, nTrans, requests, deliveries):
 			extra[i,j] = -10
 
 	Y = np.add(Y,extra)
+
+	# Price per transfer
+	if nTrans < 0:
+		Y = np.add(Y, 7 * nTrans)
+
 	
 	return (X,Y)
 
