@@ -66,6 +66,8 @@ def buildMatrixes(C, nTrans, requests, deliveries):
 			(a,b) = phi(i+nTrans, C, requests, deliveries)
 			X[i,C] += a
 			Y[i,C] += b
+		else:
+			X[i,i] = 1
 
 
 	for i in range(0, C + 1):
@@ -115,10 +117,14 @@ def bindMatrixes(C, (a1,b1), (a2,b2)):
 			f1 = j % k
 
 			X[i,j] = a1[i0,f0] * a2[i1,f1]
-			Y[i,j] = b1[i0,f0] * a1[i0,f0] + b2[i1,f1] * a2[i1,f1]
 
-			if X[i,j] != 0:
-				Y[i,j] = Y[i,j] / X[i,j]
+			if b1[i0,f0] < -700 or b2[i1,f1] < -700:
+				Y[i,j] = -1000
+			else:
+				Y[i,j] = b1[i0,f0] * a1[i0,f0] + b2[i1,f1] * a2[i1,f1]
+
+				if X[i,j] != 0:
+					Y[i,j] = Y[i,j] / X[i,j]
 
 	return (X,Y)
 
@@ -160,7 +166,7 @@ def estTotalContribs(k, cts, tMat, optPolicy):
 def valueIteration(nDecisions, nStates, transMat, contribMat, iterMax = 20):
 	n = 0
 	# Define def. margin.
-	epsilon = 1
+	epsilon = 0.01
 
 	# Establish F0.
 	Fn = F = np.zeros((nStates,1))
@@ -194,33 +200,14 @@ def valueIteration(nDecisions, nStates, transMat, contribMat, iterMax = 20):
 
 	return calls
 
-"""
-# UNCOMMENT FOR VALUE ITERATION TEST
-t = []
-t.append(np.array([[0.75,0.25],[0.3333,0.6667]]))
-t.append(np.array([[0.75,0.25],[0.3333,0.6667]]))
-
-c = []
-c.append(np.array([[8,4],[6,-7.5]]))
-c.append(np.array([[-10,6],[3,12]]))
-
-print(valueIteration(2,2,t,c))
-"""
-
 # Dados Relativos a filial 1.
-#requests1 =  [0.0356,0.0904,0.1380,0.1400,0.1224,0.1292,0.0952,0.0820,0.0560,0.0496,0.0324,0.0216, 0.0076]
-#deliveries1 = [0.0448,0.1632,0.2220,0.2092,0.1620,0.1056,0.0556,0.0236,0.0100,0.0036,0.0000,0.0000,0.0004]
-
-requests1 = [ 0.114 , 0.2652, 0.2784, 0.1916, 0.0956, 0.0404, 0.0116, 0.0028, 0.0   , 0.0   , 0.0   , 0.0004, 0.0] 
-deliveries1 = [  0.0184,  0.0872,  0.1416,  0.198,  0.2016,  0.1592,  0.1,  0.0548,  0.0264,  0.0076,  0.0044,  0.0004,  0.0004]
+requests1 =  [0.0356,0.0904,0.1380,0.1400,0.1224,0.1292,0.0952,0.0820,0.0560,0.0496,0.0324,0.0216, 0.0076]
+deliveries1 = [0.0448,0.1632,0.2220,0.2092,0.1620,0.1056,0.0556,0.0236,0.0100,0.0036,0.0000,0.0000,0.0004]
 
 
 # Dados Relativos a filial 2.
-#requests2  = [0.0612,0.1204,0.1476,0.1228,0.1080,0.1100,0.0788,0.0776,0.0576,0.0516,0.0328,0.0236,0.0080]
-#deliveries2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.0100,0.0040,0.0024,0.0008]
-
-requests2 = [0.0456, 0.0804, 0.1328, 0.1316, 0.1348, 0.1136, 0.098 , 0.084 , 0.0592, 0.0504, 0.0408, 0.02  , 0.0088]
-deliveries2 = [0.0444,0.0776,0.1324,0.144,0.1376,0.1048,0.0944,0.0832,0.0636,0.0516,0.0356,0.0236,0.0072]
+requests2  = [0.0612,0.1204,0.1476,0.1228,0.1080,0.1100,0.0788,0.0776,0.0576,0.0516,0.0328,0.0236,0.0080]
+deliveries2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.0100,0.0040,0.0024,0.0008]
 
 
 (tMat,cMat,dict) = entryProblem([requests1,requests2],[deliveries1,deliveries2])
