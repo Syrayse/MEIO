@@ -56,29 +56,17 @@ def buildMatrixes(C, nTrans, requests, deliveries):
 
 	for i in range(0, C + 1):
 
-		for j in range( max(0,nTrans), min(C, C + nTrans) + 1):
-			(a,b) = prob(i, j - nTrans, C, requests, deliveries)
-			X[i,j] += a
-			Y[i,j] += b
+		if abs(min(nTrans,0)) <= i and i <= C - nTrans:
 
-		# Added the excess for reciever
-		for j in range(C - nTrans + 1, C + 1):
-			(a,b) = prob(i, j, C, requests, deliveries)
-			X[i,C] += a
-			Y[i,C] += b
-
-		if nTrans >= 0:
-			(a,b) = phi(i, C, requests, deliveries)
-			X[i,C] += a
-			Y[i,C] += b
-		else:
-			(a,b) = phi(i, C, requests, deliveries)
-			X[i,C+nTrans] += a
-			Y[i,C+nTrans] += b
-			for j in range(0, abs(nTrans)):
-				(a,b) = prob(i, j, C, requests, deliveries)
+			for j in range( 0, C + 1):
+				(a,b) = prob(i+nTrans, j, C, requests, deliveries)
 				X[i,j] += a
 				Y[i,j] += b
+
+			(a,b) = phi(i+nTrans, C, requests, deliveries)
+			X[i,C] += a
+			Y[i,C] += b
+
 
 	for i in range(0, C + 1):
 		for j in range(0, C + 1):
@@ -86,20 +74,21 @@ def buildMatrixes(C, nTrans, requests, deliveries):
 				Y[i,j] = 0
 			else:
 				Y[i,j] = Y[i,j] / X[i,j]
-	
-	# Include the cost for extra space if j > 8	
-	extra = np.zeros( (C+1, C+1) )
 
-	for i in range(0, C + 1):
-		for j in range(9, C + 1):
-			extra[i,j] = -10
-
-	Y = np.add(Y,extra)
 
 	# Price per transfer
 	if nTrans < 0:
 		Y = np.add(Y, 7 * nTrans)
 
+
+	if nTrans < 0:
+		for i in range(0, abs(nTrans)):
+			for j in range(0, C + 1):
+				Y[i,j] = -1000
+	elif nTrans > 0:
+		for i in range(C - nTrans + 1, C + 1):
+			for j in range(0, C + 1):
+				Y[i,j] = -1000
 	
 	return (X,Y)
 
@@ -126,7 +115,10 @@ def bindMatrixes(C, (a1,b1), (a2,b2)):
 			f1 = j % k
 
 			X[i,j] = a1[i0,f0] * a2[i1,f1]
-			Y[i,j] = b1[i0,f0] + b2[i1,f1]
+			Y[i,j] = b1[i0,f0] * a1[i0,f0] + b2[i1,f1] * a2[i1,f1]
+
+			if X[i,j] != 0:
+				Y[i,j] = Y[i,j] / X[i,j]
 
 	return (X,Y)
 
@@ -168,7 +160,7 @@ def estTotalContribs(k, cts, tMat, optPolicy):
 def valueIteration(nDecisions, nStates, transMat, contribMat, iterMax = 20):
 	n = 0
 	# Define def. margin.
-	epsilon = 0.0001
+	epsilon = 1
 
 	# Establish F0.
 	Fn = F = np.zeros((nStates,1))
@@ -216,19 +208,19 @@ print(valueIteration(2,2,t,c))
 """
 
 # Dados Relativos a filial 1.
-requests1 =  [0.0356,0.0904,0.1380,0.1400,0.1224,0.1292,0.0952,0.0820,0.0560,0.0496,0.0324,0.0216, 0.0076]
-deliveries1 = [0.0448,0.1632,0.2220,0.2092,0.1620,0.1056,0.0556,0.0236,0.0100,0.0036,0.0000,0.0000,0.0004]
+#requests1 =  [0.0356,0.0904,0.1380,0.1400,0.1224,0.1292,0.0952,0.0820,0.0560,0.0496,0.0324,0.0216, 0.0076]
+#deliveries1 = [0.0448,0.1632,0.2220,0.2092,0.1620,0.1056,0.0556,0.0236,0.0100,0.0036,0.0000,0.0000,0.0004]
 
-#requests1 = [ 0.114 , 0.2652, 0.2784, 0.1916, 0.0956, 0.0404, 0.0116, 0.0028, 0.0   , 0.0   , 0.0   , 0.0004, 0.0] 
-#deliveries1 = [  0.0184,  0.0872,  0.1416,  0.198,  0.2016,  0.1592,  0.1,  0.0548,  0.0264,  0.0076,  0.0044,  0.0004,  0.0004]
+requests1 = [ 0.114 , 0.2652, 0.2784, 0.1916, 0.0956, 0.0404, 0.0116, 0.0028, 0.0   , 0.0   , 0.0   , 0.0004, 0.0] 
+deliveries1 = [  0.0184,  0.0872,  0.1416,  0.198,  0.2016,  0.1592,  0.1,  0.0548,  0.0264,  0.0076,  0.0044,  0.0004,  0.0004]
 
 
 # Dados Relativos a filial 2.
-requests2  = [0.0612,0.1204,0.1476,0.1228,0.1080,0.1100,0.0788,0.0776,0.0576,0.0516,0.0328,0.0236,0.0080]
-deliveries2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.0100,0.0040,0.0024,0.0008]
+#requests2  = [0.0612,0.1204,0.1476,0.1228,0.1080,0.1100,0.0788,0.0776,0.0576,0.0516,0.0328,0.0236,0.0080]
+#deliveries2 = [0.0192,0.0848,0.1540,0.1956,0.2040,0.1528,0.0884,0.0556,0.0284,0.0100,0.0040,0.0024,0.0008]
 
-#requests2 = [0.0456, 0.0804, 0.1328, 0.1316, 0.1348, 0.1136, 0.098 , 0.084 , 0.0592, 0.0504, 0.0408, 0.02  , 0.0088]
-#deliveries2 = [0.0444,0.0776,0.1324,0.144,0.1376,0.1048,0.0944,0.0832,0.0636,0.0516,0.0356,0.0236,0.0072]
+requests2 = [0.0456, 0.0804, 0.1328, 0.1316, 0.1348, 0.1136, 0.098 , 0.084 , 0.0592, 0.0504, 0.0408, 0.02  , 0.0088]
+deliveries2 = [0.0444,0.0776,0.1324,0.144,0.1376,0.1048,0.0944,0.0832,0.0636,0.0516,0.0356,0.0236,0.0072]
 
 
 (tMat,cMat,dict) = entryProblem([requests1,requests2],[deliveries1,deliveries2])
